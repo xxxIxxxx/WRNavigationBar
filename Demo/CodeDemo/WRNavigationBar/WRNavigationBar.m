@@ -14,17 +14,16 @@
 @implementation WRNavigationBar
 
 + (BOOL)isIphoneX {
-    struct utsname systemInfo;
-    uname(&systemInfo);
-    NSString *platform = [NSString stringWithCString:systemInfo.machine encoding:NSASCIIStringEncoding];
-    if ([platform isEqualToString:@"i386"] || [platform isEqualToString:@"x86_64"]) {
-        // judgment by height when in simulators
-        return (CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(375, 812)) ||
-                CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(812, 375)));
+   
+    if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+        return NO;
     }
-    BOOL isIPhoneX = [platform isEqualToString:@"iPhone10,3"] || [platform isEqualToString:@"iPhone10,6"];
-    return isIPhoneX;
+    if ([UIScreen mainScreen].bounds.size.height >= 812.0 ||  [UIScreen mainScreen].bounds.size.width >= 812.0) {
+        return YES;
+    }
+    return NO;
 }
+
 + (CGFloat)navBarBottom {
     return [self isIphoneX] ? 88 : 64;
 }
@@ -185,6 +184,17 @@ static char kWRBackgroundImageKey;
 - (UIView *)backgroundView {
     return (UIView *)objc_getAssociatedObject(self, &kWRBackgroundViewKey);
 }
+
+- (void)insertSubview:(UIView *)view atIndex:(NSInteger)index {
+    [super insertSubview:view atIndex:index];
+    if ([view isKindOfClass:NSClassFromString(@"_UIBarBackground")]) {
+        view.clipsToBounds = YES;
+        if (![view.subviews containsObject:self.backgroundView]) {
+            [view insertSubview:self.backgroundView atIndex:0];
+        }
+    }
+}
+
 - (void)setBackgroundView:(UIView *)backgroundView {
     if (backgroundView) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(wr_keyboardDidShow) name:UIKeyboardDidShowNotification object:nil];
